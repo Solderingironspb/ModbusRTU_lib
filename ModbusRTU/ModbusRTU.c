@@ -13,7 +13,16 @@
 
 #include "ModbusRTU.h"
 
-uint8_t ModbusRTU_tx_buffer[64] = { 0, };
+uint8_t ModbusRTU_tx_buffer[ModbusRTU_TX_BUFFER_SIZE] = { 0, };
+uint8_t ModbusRTU_rx_buffer[ModbusRTU_RX_BUFFER_SIZE] = { 0, };
+
+extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
+
+/*--------------------------------Добавить в main.c-------------------------------*/
+//extern uint8_t ModbusRTU_tx_buffer[64];
+//extern uint8_t ModbusRTU_rx_buffer[256];
+/*--------------------------------Добавить в main.c-------------------------------*/
 
 /*------------------------------CRC16(ModbusRTU)----------------------------------*/
 uint16_t ModbusRTU_CRC16_Calculate(uint8_t *data, uint8_t lenght, uint8_t byte_order) {
@@ -53,6 +62,23 @@ uint16_t ModbusRTU_CRC16_Calculate(uint8_t *data, uint8_t lenght, uint8_t byte_o
 	return crc;
 }
 /*------------------------------CRC16(ModbusRTU)----------------------------------*/
+
+/*------------------------------Проверка CRC16 входящего пакета данных----------------------------*/
+bool ModbusRTU_CRC16_Check(UART_HandleTypeDef *huart) {
+///Функция проверки CRC16 входящего пакета данных.
+///Если CRC16 входящего пакета равна CRC16, содержащейся в пакете - Данные целые. Функция вернет true. В противном случае false.
+/// \param *huart - UART, по которому принимаем данные.
+	uint16_t len = ModbusRTU_RX_BUFFER_SIZE - huart->RxXferCount; //Узнаем длину пакета входящих данных
+	uint16_t CRC_check = ModbusRTU_CRC16_Calculate(ModbusRTU_rx_buffer, len - 2, 1); //Считаем CRC входящих данных
+	uint16_t CRC_rx_buffer = ModbusRTU_rx_buffer[len - 2] << 8u | ModbusRTU_rx_buffer[len - 1]; //Смотрим CRC, которая была в пакете
+
+	if (CRC_check == CRC_rx_buffer) {
+		return true;
+	} else {
+		return false;
+	}
+}
+/*------------------------------Проверка CRC16 входящего пакета данных----------------------------*/
 
 /*------------------------------------Функция 00x01 Read Coils----------------------------------- */
 void ModbusRTU_Read_Coils_0x01(uint8_t Slave_ID, uint16_t Read_adress, uint16_t Quantity, uint8_t Slave_byte_order) {

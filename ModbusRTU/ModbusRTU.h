@@ -12,8 +12,14 @@
 #define INC_MODBUSRTU_H_
 
 #include <main.h>
+#include <stdbool.h>
+
+
+#define ModbusRTU_TX_BUFFER_SIZE 64
+#define ModbusRTU_RX_BUFFER_SIZE 256
 
 uint16_t ModbusRTU_CRC16_Calculate(uint8_t *data, uint8_t lenght, uint8_t byte_order);
+bool ModbusRTU_CRC16_Check(UART_HandleTypeDef *huart);
 void ModbusRTU_Read_Coils_0x01(uint8_t Slave_ID, uint16_t Read_adress, uint16_t Quantity, uint8_t Slave_byte_order); //Функция 0x01
 void ModbusRTU_Read_Discrete_Inputs_0x02(uint8_t Slave_ID, uint16_t Read_adress, uint16_t Quantity, uint8_t Slave_byte_order); //Функция 0x02
 void ModbusRTU_Read_Holding_Registers_0x03(uint8_t Slave_ID, uint16_t Read_adress, uint8_t Quantity, uint8_t Slave_byte_order); //Функция 0x03
