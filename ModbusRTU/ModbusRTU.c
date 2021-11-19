@@ -164,4 +164,20 @@ void ModbusRTU_Read_Input_Registers_0x04(uint8_t Slave_ID, uint16_t Read_adress,
 }
 /*--------------------------------Функция 00x04 Read Input Registers----------------------------- */
 
+void ModbusRTU_Preset_Multiple_Registers_0x10(uint8_t Slave_ID, uint16_t Write_adress, uint16_t Quantity_registers, uint8_t Quantity_bytes,
+		uint16_t value, uint8_t Slave_byte_order) {
+	ModbusRTU_tx_buffer[0] = Slave_ID;
+	ModbusRTU_tx_buffer[1] = 0x10;
+	ModbusRTU_tx_buffer[2] = (uint16_t) Write_adress >> 8u;
+	ModbusRTU_tx_buffer[3] = (uint16_t) Write_adress & 0x00FF;
+	ModbusRTU_tx_buffer[4] = (uint16_t) Quantity_registers >> 8u;
+	ModbusRTU_tx_buffer[5] = (uint16_t) Quantity_registers & 0x00FF;
+	ModbusRTU_tx_buffer[6] = Quantity_bytes;
+	ModbusRTU_tx_buffer[7] = value << 8u;
+	ModbusRTU_tx_buffer[8] = value & 0x00FF;
+	uint16_t CRC16 = ModbusRTU_CRC16_Calculate(ModbusRTU_tx_buffer, 9, Slave_byte_order);
+	ModbusRTU_tx_buffer[9] = (uint16_t) CRC16 >> 8u;
+	ModbusRTU_tx_buffer[10] = (uint16_t) CRC16 & 0x00FF;
+}
+
 #endif /* SRC_MODBUSRTU_C_ */
