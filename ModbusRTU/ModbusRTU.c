@@ -80,7 +80,7 @@ bool ModbusRTU_CRC16_Check(UART_HandleTypeDef *huart) {
 }
 /*------------------------------Проверка CRC16 входящего пакета данных----------------------------*/
 
-/*------------------------------------Функция 00x01 Read Coils----------------------------------- */
+/*------------------------------------Функция 0x01 Read Coils----------------------------------- */
 void ModbusRTU_Read_Coils_0x01(uint8_t Slave_ID, uint16_t Read_adress, uint16_t Quantity, uint8_t Slave_byte_order) {
 ///Функция 0x01 Read Coils
 /// \param Slave_ID - ID Modbus RTU Slave устройства, к которому обращаемся
@@ -99,9 +99,9 @@ void ModbusRTU_Read_Coils_0x01(uint8_t Slave_ID, uint16_t Read_adress, uint16_t 
 	ModbusRTU_tx_buffer[6] = (uint16_t) CRC16 >> 8u;
 	ModbusRTU_tx_buffer[7] = (uint16_t) CRC16 & 0x00FF;
 }
-/*------------------------------------Функция 00x01 Read Coils----------------------------------- */
+/*------------------------------------Функция 0x01 Read Coils----------------------------------- */
 
-/*--------------------------------Функция 00x02 Read Discrete Inputs----------------------------- */
+/*--------------------------------Функция 0x02 Read Discrete Inputs----------------------------- */
 void ModbusRTU_Read_Discrete_Inputs_0x02(uint8_t Slave_ID, uint16_t Read_adress, uint16_t Quantity, uint8_t Slave_byte_order) {
 ///Функция 0x02 Read Discrete Inputs
 /// \param Slave_ID - ID Modbus RTU Slave устройства, к которому обращаемся
@@ -120,9 +120,9 @@ void ModbusRTU_Read_Discrete_Inputs_0x02(uint8_t Slave_ID, uint16_t Read_adress,
 	ModbusRTU_tx_buffer[6] = (uint16_t) CRC16 >> 8u;
 	ModbusRTU_tx_buffer[7] = (uint16_t) CRC16 & 0x00FF;
 }
-/*--------------------------------Функция 00x02 Read Discrete Inputs----------------------------- */
+/*--------------------------------Функция 0x02 Read Discrete Inputs----------------------------- */
 
-/*------------------------------Функция 00x03 Read Holding Registers----------------------------- */
+/*------------------------------Функция 0x03 Read Holding Registers----------------------------- */
 void ModbusRTU_Read_Holding_Registers_0x03(uint8_t Slave_ID, uint16_t Read_adress, uint8_t Quantity, uint8_t Slave_byte_order) {
 ///Функция 0x03 Read Holding Registers
 /// \param Slave_ID - ID Modbus RTU Slave устройства, к которому обращаемся
@@ -141,9 +141,9 @@ void ModbusRTU_Read_Holding_Registers_0x03(uint8_t Slave_ID, uint16_t Read_adres
 	ModbusRTU_tx_buffer[6] = (uint16_t) CRC16 >> 8u;
 	ModbusRTU_tx_buffer[7] = (uint16_t) CRC16 & 0x00FF;
 }
-/*------------------------------Функция 00x03 Read Holding Registers----------------------------- */
+/*------------------------------Функция 0x03 Read Holding Registers----------------------------- */
 
-/*--------------------------------Функция 00x04 Read Input Registers----------------------------- */
+/*--------------------------------Функция 0x04 Read Input Registers----------------------------- */
 void ModbusRTU_Read_Input_Registers_0x04(uint8_t Slave_ID, uint16_t Read_adress, uint8_t Quantity, uint8_t Slave_byte_order) {
 ///Функция 0x04 Read Discrete Inputs
 /// \param Slave_ID - ID Modbus RTU Slave устройства, к которому обращаемся
@@ -164,24 +164,34 @@ void ModbusRTU_Read_Input_Registers_0x04(uint8_t Slave_ID, uint16_t Read_adress,
 }
 /*--------------------------------Функция 00x04 Read Input Registers----------------------------- */
 
-void ModbusRTU_Preset_Multiple_Registers_0x10(uint8_t Slave_ID, uint16_t Write_adress, uint16_t Quantity_registers, uint8_t Quantity_bytes,
-		uint16_t value, uint8_t Slave_byte_order) {
+/*--------------------------------------------Функция 0x10 Preset Multiple Registers---------------------------------------------*/
+uint8_t ModbusRTU_Preset_Multiple_Registers_0x10(uint8_t Slave_ID, uint16_t Write_adress, uint16_t Quantity_registers, uint16_t *value, uint8_t Slave_byte_order) {
+///Функция 0x10 Preset Multiple Registers(собирает массив данных на запрос по ModbusRTU и возвращает длинну собранного буфера данных)
+/// \param Slave_ID - ID Modbus RTU Slave устройства, к которому обращаемся
+/// \param Write_adress - Адрес, с которого начинаем запись данных
+/// \param Quantity_registers - количество запрашиваемых 16ти битных ячеек, куда будем кидать данные.
+// Обратите внимание, что далеко не все контроллеры поддерживают множественную запись, а довольствуются записью по-одному параметру.
+/// \param *value - указатель на данные, которые будем отправлять. Лучше всего работать с массивом данных.
+/// \param Slave_byte_order - Порядок регистра и байт в ModbusRTU Slave устройстве
 	uint8_t buffer_size = 0;
 	ModbusRTU_tx_buffer[0] = Slave_ID;
 	ModbusRTU_tx_buffer[1] = 0x10;
-	ModbusRTU_tx_buffer[2] = (uint16_t) Write_adress >> 8u;
-	ModbusRTU_tx_buffer[3] = (uint16_t) Write_adress & 0x00FF;
-	ModbusRTU_tx_buffer[4] = (uint16_t) Quantity_registers >> 8u;
-	ModbusRTU_tx_buffer[5] = (uint16_t) Quantity_registers & 0x00FF;
-	ModbusRTU_tx_buffer[6] = Quantity_bytes;
-	for (uint8_t i = 0; i < Quantity_bytes; i++) {
-		ModbusRTU_tx_buffer[7 + (i * 2)] = value << 8u;
-		ModbusRTU_tx_buffer[8 + (i * 2)] = value & 0x00FF;
+	ModbusRTU_tx_buffer[2] = *((uint8_t*) &Write_adress + 1);
+	ModbusRTU_tx_buffer[3] = *(uint8_t*) &Write_adress;
+	ModbusRTU_tx_buffer[4] = *((uint8_t*) &Quantity_registers + 1);
+	ModbusRTU_tx_buffer[5] = *(uint8_t*) &Quantity_registers;
+	ModbusRTU_tx_buffer[6] = Quantity_registers;
+	for (uint8_t i = 0; i < ModbusRTU_tx_buffer[6]; i++) {
+		ModbusRTU_tx_buffer[7 + (i * 2)] = *((uint8_t*) value + (1 + (i * 2)));
+		ModbusRTU_tx_buffer[8 + (i * 2)] = *((uint8_t*) value + (i * 2));
 		buffer_size = 8 + (i * 2) + 1;
 	}
 	uint16_t CRC16 = ModbusRTU_CRC16_Calculate(ModbusRTU_tx_buffer, buffer_size, Slave_byte_order);
-	ModbusRTU_tx_buffer[buffer_size] = (uint16_t) CRC16 >> 8u;
-	ModbusRTU_tx_buffer[buffer_size + 1] = (uint16_t) CRC16 & 0x00FF;
+	ModbusRTU_tx_buffer[buffer_size] = *((uint8_t*) &CRC16 + 1);
+	ModbusRTU_tx_buffer[buffer_size + 1] = *(uint8_t*) &CRC16;
+
+	return buffer_size = buffer_size + 2;
 }
+/*--------------------------------------------Функция 0x10 Preset Multiple Registers---------------------------------------------*/
 
 #endif /* SRC_MODBUSRTU_C_ */
