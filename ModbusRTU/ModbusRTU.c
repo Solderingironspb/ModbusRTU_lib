@@ -165,7 +165,7 @@ void ModbusRTU_Read_Input_Registers_0x04(uint8_t Slave_ID, uint16_t Read_adress,
 /*--------------------------------Функция 00x04 Read Input Registers----------------------------- */
 
 /*--------------------------------------------Функция 0x10 Preset Multiple Registers---------------------------------------------*/
-uint8_t ModbusRTU_Preset_Multiple_Registers_0x10(uint8_t Slave_ID, uint16_t Write_adress, uint16_t Quantity_registers, uint16_t *value, uint8_t Slave_byte_order) {
+uint8_t ModbusRTU_Preset_Multiple_Registers_0x10(uint8_t Slave_ID, uint16_t Write_adress, uint16_t Quantity_registers, int16_t *value, uint8_t Slave_byte_order) {
 ///Функция 0x10 Preset Multiple Registers(собирает массив данных на запрос по ModbusRTU и возвращает длинну собранного буфера данных)
 /// \param Slave_ID - ID Modbus RTU Slave устройства, к которому обращаемся
 /// \param Write_adress - Адрес, с которого начинаем запись данных
@@ -180,10 +180,10 @@ uint8_t ModbusRTU_Preset_Multiple_Registers_0x10(uint8_t Slave_ID, uint16_t Writ
 	ModbusRTU_tx_buffer[3] = *(uint8_t*) &Write_adress;
 	ModbusRTU_tx_buffer[4] = *((uint8_t*) &Quantity_registers + 1);
 	ModbusRTU_tx_buffer[5] = *(uint8_t*) &Quantity_registers;
-	ModbusRTU_tx_buffer[6] = Quantity_registers;
-	for (uint8_t i = 0; i < ModbusRTU_tx_buffer[6]; i++) {
-		ModbusRTU_tx_buffer[7 + (i * 2)] = *((uint8_t*) value + (1 + (i * 2)));
-		ModbusRTU_tx_buffer[8 + (i * 2)] = *((uint8_t*) value + (i * 2));
+	ModbusRTU_tx_buffer[6] = Quantity_registers * 2;
+	for (uint8_t i = 0; i < Quantity_registers; i++) {
+		ModbusRTU_tx_buffer[7 + (i * 2)] = *((int8_t*) value + (1 + (i * 2)));
+		ModbusRTU_tx_buffer[8 + (i * 2)] = *((int8_t*) value + (i * 2));
 		buffer_size = 8 + (i * 2) + 1;
 	}
 	uint16_t CRC16 = ModbusRTU_CRC16_Calculate(ModbusRTU_tx_buffer, buffer_size, Slave_byte_order);
